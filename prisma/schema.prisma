@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id           String   @id @default(cuid())
+  apn          String?
+  situsAddress String
+  city         String
+  state        String
+  postalCode   String
+  county       String
+  propertyType String?
+  units        Int?
+  yearBuilt    Int?
+  lat          Float?
+  lng          Float?
+  parcelId     String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  owners       OwnerProperty[]
+  deeds        Deed[]
+  mortgages    Mortgage[]
+  sources      Source[]
+}
+
+model Owner {
+  id           String   @id @default(cuid())
+  type         String
+  name         String
+  mailingAddr1 String?
+  mailingCity  String?
+  mailingState String?
+  mailingZip   String?
+  fein         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  properties   OwnerProperty[]
+  contacts     Contact[]
+}
+
+model OwnerProperty {
+  ownerId    String
+  propertyId String
+  role       String
+  startDate  DateTime?
+  endDate    DateTime?
+  @@id([ownerId, propertyId])
+  owner      Owner    @relation(fields: [ownerId], references: [id])
+  property   Property @relation(fields: [propertyId], references: [id])
+}
+
+model Deed {
+  id           String   @id @default(cuid())
+  propertyId   String
+  recordedDate DateTime
+  docType      String
+  book         String?
+  page         String?
+  instrumentNo String?
+  grantor      String?
+  grantee      String?
+  salePrice    Decimal? @db.Decimal(18, 2)
+  sourceUrl    String?
+  property     Property @relation(fields: [propertyId], references: [id])
+}
+
+model Mortgage {
+  id           String   @id @default(cuid())
+  propertyId   String
+  recordedDate DateTime
+  amount       Decimal? @db.Decimal(18, 2)
+  lender       String?
+  maturityDate DateTime?
+  satisfied    Boolean  @default(false)
+  sourceUrl    String?
+  property     Property @relation(fields: [propertyId], references: [id])
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  ownerId   String
+  kind      String
+  value     String
+  source    String
+  createdAt DateTime @default(now())
+  owner     Owner    @relation(fields: [ownerId], references: [id])
+}
+
+model Source {
+  id          String   @id @default(cuid())
+  propertyId  String?
+  ownerId     String?
+  system      String
+  sourceUrl   String?
+  asOf        DateTime @default(now())
+  scrapeJobId String?
+}
